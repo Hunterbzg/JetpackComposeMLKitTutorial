@@ -23,7 +23,7 @@ class TextRecognitionAnalyzer(
 ) : ImageAnalysis.Analyzer {
 
     companion object {
-        const val THROTTLE_TIMEOUT_MS = 1_000L
+        const val THROTTLE_TIMEOUT_MS = 5_00L
     }
 
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -38,10 +38,19 @@ class TextRecognitionAnalyzer(
             suspendCoroutine { continuation ->
                 textRecognizer.process(inputImage)
                     .addOnSuccessListener { visionText: Text ->
+                        val tag = visionText.textBlocks.firstOrNull {
+                            //"\\b[A-Z]{2,3}\\d{4}\\b".toRegex().matches(it.text)
+                            "\\bJavaScript\\b".toRegex().matches(it.text)
+                        }
+                        if (tag == null) return@addOnSuccessListener
+
+                        onDetectedTextUpdated(tag.text)
+                        /*
                         val detectedText: String = visionText.text
                         if (detectedText.isNotBlank()) {
                             onDetectedTextUpdated(detectedText)
                         }
+                         */
                     }
                     .addOnCompleteListener {
                         continuation.resume(Unit)
